@@ -1,0 +1,2 @@
+# Ignorar artefactos de compilación locales de Rust/Cargo
+target/
