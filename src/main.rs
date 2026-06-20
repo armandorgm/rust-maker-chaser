@@ -206,11 +206,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let api_key = std::env::var("BINANCE_API_KEY")
-        .unwrap_or_else(|_| "".to_string());
+        .unwrap_or_else(|_| "".to_string())
+        .trim()
+        .trim_matches('"')
+        .to_string();
     let api_secret = std::env::var("BINANCE_API_SECRET")
-        .unwrap_or_else(|_| "".to_string());
+        .unwrap_or_else(|_| "".to_string())
+        .trim()
+        .trim_matches('"')
+        .to_string();
     let testnet = std::env::var("TESTNET")
         .unwrap_or_else(|_| "false".to_string())
+        .trim()
         .parse::<bool>()
         .unwrap_or(false);
 

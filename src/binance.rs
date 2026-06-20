@@ -24,8 +24,8 @@ impl BinanceClient {
         };
 
         BinanceClient {
-            api_key,
-            api_secret,
+            api_key: api_key.trim().to_string(),
+            api_secret: api_secret.trim().to_string(),
             base_url,
             time_offset: 0,
             client: reqwest::Client::new(),
