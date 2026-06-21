@@ -200,8 +200,19 @@ enum ChaseState {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Load env variables
-    if let Err(_) = dotenvy::from_path("../backend/.env") {
+    // 1. Load env variables from multiple potential locations
+    let mut env_path = None;
+    if std::path::Path::new("../backend/.env").exists() {
+        env_path = Some("../backend/.env");
+    } else if std::path::Path::new("backend/.env").exists() {
+        env_path = Some("backend/.env");
+    } else if std::path::Path::new(".env").exists() {
+        env_path = Some(".env");
+    }
+
+    if let Some(path) = env_path {
+        let _ = dotenvy::from_path(path);
+    } else {
         let _ = dotenvy::dotenv();
     }
 
@@ -223,7 +234,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let symbol = "1000PEPEUSDC".to_string();
 
-    let client = BinanceClient::new(api_key, api_secret, testnet);
+    let client = BinanceClient::new(api_key.clone(), api_secret, testnet);
 
     let shared = Arc::new(parking_lot::Mutex::new(SharedState {
         connected: false,
@@ -242,6 +253,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Spawn Background Async Task (handling WS, REST and Chasing Logic)
     tokio::spawn(async move {
+        // Output API Key Diagnostics on startup
+        if api_key.is_empty() {
+            log_to_shared(&shared_clone, "[ERROR] BINANCE_API_KEY no encontrada. Asegúrate de configurar backend/.env");
+        } else {
+            let masked = if api_key.len() > 8 {
+                format!("{}...{}", &api_key[0..4], &api_key[api_key.len()-4..])
+            } else {
+                "Corta / Inválida".to_string()
+            };
+            log_to_shared(&shared_clone, &format!("[System] Archivo .env cargado con éxito. Path: {:?}", env_path));
+            log_to_shared(&shared_clone, &format!("[System] API Key detectada: {}", masked));
+        }
+
         let mut client = client_clone;
         if let Err(e) = client.sync_time().await {
             log_to_shared(&shared_clone, &format!("[Warning] Error sync time: {}", e));
