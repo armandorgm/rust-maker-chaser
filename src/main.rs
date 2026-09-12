@@ -51,13 +51,6 @@ impl ChaserApp {
         }
     }
 
-    fn add_log(&self, msg: &str) {
-        let mut state = self.shared.lock();
-        state.logs.push(msg.to_string());
-        if state.logs.len() > 15 {
-            state.logs.remove(0);
-        }
-    }
 }
 
 impl eframe::App for ChaserApp {
@@ -276,7 +269,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // WebSocket Stream Subscription
         let ws_url = "wss://fstream.binance.com/ws/1000pepeusdc@bookTicker";
-        let mut ws_connected = false;
         
         loop {
             log_to_shared(&shared_clone, "[WebSocket] Conectando...");
@@ -284,7 +276,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Ok((ws_stream, _)) => {
                     log_to_shared(&shared_clone, "[WebSocket] ¡Conectado con éxito!");
                     set_ws_connected(&shared_clone, true);
-                    ws_connected = true;
 
                     let (_, mut ws_read) = ws_stream.split();
 
@@ -392,7 +383,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     }
                                     _ => {
                                         log_to_shared(&shared_clone, "[WebSocket] Desconectado de stream. Reintentando...");
-                                        ws_connected = false;
                                         set_ws_connected(&shared_clone, false);
                                         break; // Reconnect outer loop
                                     }

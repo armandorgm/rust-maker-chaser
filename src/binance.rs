@@ -136,33 +136,4 @@ impl BinanceClient {
         Ok(json_body)
     }
 
-    pub async fn query_order(
-        &self,
-        symbol: &str,
-        order_id: i64,
-    ) -> Result<Value, Box<dyn std::error::Error + Send + Sync>> {
-        let path = "/fapi/v1/order";
-        let timestamp = self.get_timestamp();
-        let query_without_sig = format!(
-            "symbol={}&orderId={}&timestamp={}&recvWindow=5000",
-            symbol, order_id, timestamp
-        );
-        let signature = self.sign(&query_without_sig);
-        let url = format!("{}{}?{}&signature={}", self.base_url, path, query_without_sig, signature);
-
-        let resp = self.client.get(&url)
-            .headers(self.headers())
-            .send()
-            .await?;
-
-        let status = resp.status();
-        let body = resp.text().await?;
-        let json_body: Value = serde_json::from_str(&body)?;
-
-        if !status.is_success() {
-            return Err(format!("Binance API Error: status={} body={}", status, body).into());
-        }
-
-        Ok(json_body)
-    }
 }
