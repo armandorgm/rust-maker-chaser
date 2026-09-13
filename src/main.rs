@@ -8,7 +8,9 @@ use serde_json::Value;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
 mod binance;
+mod env_load;
 use binance::BinanceClient;
+use env_load::resolve_env_path;
 
 enum Command {
     StartChase { side: String },
@@ -193,16 +195,9 @@ enum ChaseState {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Load env variables from multiple potential locations
-    let mut env_path = None;
-    if std::path::Path::new("../backend/.env").exists() {
-        env_path = Some("../backend/.env");
-    } else if std::path::Path::new("backend/.env").exists() {
-        env_path = Some("backend/.env");
-    } else if std::path::Path::new(".env").exists() {
-        env_path = Some(".env");
-    }
-
+    // Load credentials from .env in the crate root first (standalone).
+    // backend/.env paths remain as optional fallbacks during monorepo migration.
+    let env_path = resolve_env_path();
     if let Some(path) = env_path {
         let _ = dotenvy::from_path(path);
     } else {
@@ -248,7 +243,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::spawn(async move {
         // Output API Key Diagnostics on startup
         if api_key.is_empty() {
-            log_to_shared(&shared_clone, "[ERROR] BINANCE_API_KEY no encontrada. Asegúrate de configurar backend/.env");
+            log_to_shared(&shared_clone, "[ERROR] BINANCE_API_KEY no encontrada. Copia .env.example a .env en la raíz del proyecto.");
         } else {
             let masked = if api_key.len() > 8 {
                 format!("{}...{}", &api_key[0..4], &api_key[api_key.len()-4..])
